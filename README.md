@@ -51,9 +51,9 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/data/tooljet` - Data storage
-- `./rootfs/config/tooljet` - Data storage
-- `./rootfs/data/db/postgres/tooljet` - Data storage
+- `./volumes/data/tooljet` - Data storage
+- `./volumes/config/tooljet` - Data storage
+- `./volumes/data/db/postgres/tooljet` - Data storage
 
 ## 🔐 Security
 
