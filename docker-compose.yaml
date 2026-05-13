@@ -17,6 +17,8 @@ services:
     logging: *default-logging
     networks:
       - tooljet
+      - proxy
+      - cloudflare
     ports:
       - "172.17.0.1:8082:3000"
     environment:
@@ -26,6 +28,8 @@ services:
       LOCKBOX_MASTER_KEY: ${LOCKBOX_MASTER_KEY:-changeme_lockbox_master_key_32c}
       DATABASE_URL: postgres://${DB_USER_NAME:-tooljet}:${DB_USER_PASS:-changeme_db_password}@tooljet-db:5432/${DB_CREATE_DATABASE_NAME:-tooljet}
       DEPLOYMENT_PLATFORM: docker
+      CONTAINER_NAME: tooljet-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
     volumes:
       - ./volumes/data/tooljet:/data
     depends_on:
@@ -35,6 +39,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://tooljet-app:3000'
+      - 'cloudflare.hostname=tooljet.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.tooljet-app.entrypoints=http'
+      - 'traefik.http.routers.tooljet-app-secure.tls=true'
+      - 'traefik.http.routers.tooljet-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.tooljet-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.tooljet-app.middlewares=tooljet-app-https-redirect'
+      - 'traefik.http.routers.tooljet-app-secure.entrypoints=https'
+      - 'traefik.http.routers.tooljet-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.tooljet-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.tooljet-app-secure.service=tooljet-app'
+      - 'traefik.http.services.tooljet-app.loadbalancer.server.port=3000'
 
   tooljet-db:
     image: postgres:latest
@@ -49,6 +69,7 @@ services:
       POSTGRES_DB: ${DB_CREATE_DATABASE_NAME:-tooljet}
       POSTGRES_USER: ${DB_USER_NAME:-tooljet}
       POSTGRES_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
+      CONTAINER_NAME: tooljet-db
     volumes:
       - ./volumes/data/db/postgres/tooljet:/var/lib/postgresql/data
     healthcheck:
@@ -61,3 +82,7 @@ networks:
   tooljet:
     name: tooljet
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
