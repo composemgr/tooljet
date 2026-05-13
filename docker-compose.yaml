@@ -1,5 +1,6 @@
 # nginx proxy address - http://172.17.0.1:8082
 
+name: tooljet
 x-logging: &default-logging
   driver: json-file
   options:
@@ -9,31 +10,37 @@ x-logging: &default-logging
 services:
   tooljet:
     image: tooljet/tooljet-ce:latest
+    pull_policy: always
     container_name: tooljet-app
-    restart: unless-stopped
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
     logging: *default-logging
     networks:
       - tooljet
     ports:
-      - "8082:3000"
+      - "172.17.0.1:8082:3000"
     environment:
       TZ: ${TZ:-America/New_York}
+      TOOLJET_HOST: http://${BASE_HOST_NAME:-localhost}:8082
+      SECRET_KEY_BASE: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
+      LOCKBOX_MASTER_KEY: ${LOCKBOX_MASTER_KEY:-changeme_lockbox_master_key_32c}
       DATABASE_URL: postgres://${DB_USER_NAME:-tooljet}:${DB_USER_PASS:-changeme_db_password}@tooljet-db:5432/${DB_CREATE_DATABASE_NAME:-tooljet}
+      DEPLOYMENT_PLATFORM: docker
     volumes:
       - ./volumes/data/tooljet:/data
-      - ./volumes/config/tooljet:/config
     depends_on:
       - tooljet-db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
   tooljet-db:
-    image: postgres:16-alpine
+    image: postgres:latest
+    pull_policy: always
     container_name: tooljet-db
-    restart: unless-stopped
+    restart: always
     logging: *default-logging
     networks:
       - tooljet
@@ -52,4 +59,5 @@ services:
 
 networks:
   tooljet:
+    name: tooljet
     external: false
