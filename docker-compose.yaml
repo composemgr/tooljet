@@ -25,7 +25,7 @@ services:
       TZ: ${TZ:-America/New_York}
       TOOLJET_HOST: http://${BASE_HOST_NAME:-localhost}:8082
       SECRET_KEY_BASE: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
-      LOCKBOX_MASTER_KEY: ${LOCKBOX_MASTER_KEY:-changeme_lockbox_master_key_32c}
+      LOCKBOX_MASTER_KEY: ${ENCRYPTION_KEY:-changeme_lockbox_master_key_32c}
       DATABASE_URL: postgres://${DB_USER_NAME:-tooljet}:${DB_USER_PASS:-changeme_db_password}@tooljet-db:5432/${DB_CREATE_DATABASE_NAME:-tooljet}
       DEPLOYMENT_PLATFORM: docker
       CONTAINER_NAME: tooljet-app
